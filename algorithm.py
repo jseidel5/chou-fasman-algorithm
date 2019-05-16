@@ -1,8 +1,19 @@
+# import glob
 
-# reading Structure_propensities.txt
 
-filename = 'Structure_propensities.txt'
+propensity_file = 'data/structure_propensities.txt'
+sequence_file = 'data/test_sequence.fasta'
 
+def read_sequence(file):
+    file = open(file, 'r')
+    sequence = ''
+    for line in file:
+        if line.startswith('>'):
+            pass
+        else:
+            line = line.replace('\n','').replace('\r','')
+            sequence += line
+    return sequence
 
 # creates dictionary and adds AS (key) + desired colum (value) into it
 def read_propensities_into_dic(file, column):
@@ -30,19 +41,48 @@ def read_propensities_into_dic(file, column):
     return dic_temp
 
 
-helix_dic = read_propensities_into_dic(filename, 1)
-sheet_dic = read_propensities_into_dic(filename, 2)
-turn_dic = read_propensities_into_dic(filename, 3)
-print('Helix', helix_dic)
-print('Sheet', sheet_dic)
-print('Turn', turn_dic)
+print('Sequence: ', read_sequence(sequence_file))
+sequence = read_sequence(sequence_file)
+
+helix_dic = read_propensities_into_dic(propensity_file, 1) # opens file 3 times -> should be changed
+sheet_dic = read_propensities_into_dic(propensity_file, 2)
+turn_dic = read_propensities_into_dic(propensity_file, 3)
+print('Helix: ', helix_dic)
+print('Sheet: ', sheet_dic)
+print('Turn: ', turn_dic)
 
 
 # creates list of secondary structure values for sequence
 def map_dic_to_seq(sequence, dictionary):
     value_list = []
-    for key in sequence:
-        value_list.append(dictionary[sequence] = dictionary.values())  # doesn't work yet
+    for aa in sequence:
+        value_list.append(dictionary[aa])
     return value_list
 
-print(map_dic_to_seq('ARD', helix_dic))
+helix_value_list = (map_dic_to_seq(sequence, helix_dic))
+sheet_value_list = (map_dic_to_seq(sequence, sheet_dic))
+turn_value_list = (map_dic_to_seq(sequence, turn_dic))
+print('Helix_values: ', helix_value_list)
+print('Sheet_values: ', sheet_value_list)
+print('Turn_values: ', turn_value_list)
+
+def find_nucleations(value_list,secondary_structure): # doesn't work yet
+    if secondary_structure == 'H':
+        window_size = 6
+        amount_for_nuc = 4
+        nucleation_threshold = 1.03
+    elif secondary_structure == 'E':
+        window_size = 5
+        amount_for_nuc = 3
+        nucleation_threshold = 1.00
+    elif secondary_structure == 'T':
+        pass
+    sec_struct_list = ['-'] * len(value_list)
+    for aa in range(0, len(value_list) - window_size):
+        if sum(value_list[aa:window_size]) >= amount_for_nuc * nucleation_threshold:
+            sec_struct_list[aa:window_size] = secondary_structure
+        else:
+            pass
+    return sec_struct_list
+
+print(find_nucleations(helix_value_list, 'H'))
