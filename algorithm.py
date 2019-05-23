@@ -4,16 +4,18 @@
 propensity_file = 'data/structure_propensities.txt'
 sequence_file = 'data/test_sequence.fasta'
 
+
 def read_sequence(file):
     file = open(file, 'r')
-    sequence = ''
+    aa_sequence = ''
     for line in file:
         if line.startswith('>'):
             pass
         else:
-            line = line.replace('\n','').replace('\r','')
-            sequence += line
-    return sequence
+            line = line.replace('\n', '').replace('\r', '')
+            aa_sequence += line
+    return aa_sequence
+
 
 # creates dictionary and adds AS (key) + desired colum (value) into it
 def read_propensities_into_dic(file, column):
@@ -44,7 +46,7 @@ def read_propensities_into_dic(file, column):
 print('Sequence: ', read_sequence(sequence_file))
 sequence = read_sequence(sequence_file)
 
-helix_dic = read_propensities_into_dic(propensity_file, 1) # opens file 3 times -> should be changed
+helix_dic = read_propensities_into_dic(propensity_file, 1)  # opens file 3 times -> should be changed
 sheet_dic = read_propensities_into_dic(propensity_file, 2)
 turn_dic = read_propensities_into_dic(propensity_file, 3)
 print('Helix: ', helix_dic)
@@ -59,6 +61,7 @@ def map_dic_to_seq(sequence, dictionary):
         value_list.append(dictionary[aa])
     return value_list
 
+
 helix_value_list = (map_dic_to_seq(sequence, helix_dic))
 sheet_value_list = (map_dic_to_seq(sequence, sheet_dic))
 turn_value_list = (map_dic_to_seq(sequence, turn_dic))
@@ -66,7 +69,8 @@ print('Helix_value_list: ', helix_value_list)
 print('Sheet_value_list: ', sheet_value_list)
 print('Turn_value_list: ', turn_value_list)
 
-def find_nucleations(value_list,secondary_structure):
+
+def find_nucleations(value_list, secondary_structure):
     if secondary_structure == 'H':
         window_size = 6
         amount_for_nuc = 4
@@ -75,24 +79,45 @@ def find_nucleations(value_list,secondary_structure):
         window_size = 5
         amount_for_nuc = 3
         nucleation_threshold = 1.00
-    #elif secondary_structure == 'T':
+    # elif secondary_structure == 'T':
     #    pass
     sec_struct_list = ['-'] * len(value_list)
     for aa in range(0, len(value_list) - window_size):
         window = []
-        for i in range(aa, aa + window_size):
-            window.append(value_list[i])
-        result = list(filter(lambda x: x >= nucleation_threshold, window)) # look at documentation if only > or >=
+        for win_index in range(aa, aa + window_size):
+            window.append(value_list[win_index])
+        result = list(filter(lambda x: x >= nucleation_threshold, window))  # look at documentation if only > or >=
         if len(result) >= amount_for_nuc:
             for i in range(aa, aa + window_size):
-                sec_struct_list[i] = secondary_structure
+                sec_struct_list[i] = secondary_structure   # may not be quite correct
     return sec_struct_list
+
 
 helix_nuc_list = find_nucleations(helix_value_list, 'H')
 sheet_nuc_list = find_nucleations(sheet_value_list, 'E')
 print('Helix_nuc_list: ', helix_nuc_list)
 print('Sheet_nuc_list: ', sheet_nuc_list)
 
-def extend_nucleations():
+
+def extend_nucleations():  # might not be needed/ included in find nucleations/ called by find nucleations??
     pass
 
+# http://www.biogem.org/tool/chou-fasman/index.php
+# comparison to webtool with implemented cf
+test = 'HHHHHHHHHHHHHHHHHHH                   HHHHHHHHHHHHHHHHHHHHHH       HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH          HHHHHHHHHHHHHHHHHHHH        HHHHHHH          '
+test2 = []
+for i in test:
+    test2.append(i)
+print('orig')
+print(test2)
+print('pred')
+print(helix_nuc_list)
+
+testsh = 'EEEEEEE     EEEEEEEEEEEEEEEEEEEE                               EEEEEE       EEE                          EEEEEEEEEEE      EEEEEEEEEEEE              EEEE       EEEEEEEE      '
+test2sh = []
+for i in testsh:
+    test2sh.append(i)
+print('orig')
+print(test2sh)
+print('pred')
+print(sheet_nuc_list)
