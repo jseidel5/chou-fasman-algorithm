@@ -62,11 +62,11 @@ def map_dic_to_seq(sequence, dictionary):
 helix_value_list = (map_dic_to_seq(sequence, helix_dic))
 sheet_value_list = (map_dic_to_seq(sequence, sheet_dic))
 turn_value_list = (map_dic_to_seq(sequence, turn_dic))
-print('Helix_values: ', helix_value_list)
-print('Sheet_values: ', sheet_value_list)
-print('Turn_values: ', turn_value_list)
+print('Helix_value_list: ', helix_value_list)
+print('Sheet_value_list: ', sheet_value_list)
+print('Turn_value_list: ', turn_value_list)
 
-def find_nucleations(value_list,secondary_structure): # doesn't work yet
+def find_nucleations(value_list,secondary_structure):
     if secondary_structure == 'H':
         window_size = 6
         amount_for_nuc = 4
@@ -75,14 +75,24 @@ def find_nucleations(value_list,secondary_structure): # doesn't work yet
         window_size = 5
         amount_for_nuc = 3
         nucleation_threshold = 1.00
-    elif secondary_structure == 'T':
-        pass
+    #elif secondary_structure == 'T':
+    #    pass
     sec_struct_list = ['-'] * len(value_list)
     for aa in range(0, len(value_list) - window_size):
-        if sum(value_list[aa:window_size]) >= amount_for_nuc * nucleation_threshold:
-            sec_struct_list[aa:window_size] = secondary_structure
-        else:
-            pass
+        window = []
+        for i in range(aa, aa + window_size):
+            window.append(value_list[i])
+        result = list(filter(lambda x: x >= nucleation_threshold, window)) # look at documentation if only > or >=
+        if len(result) >= amount_for_nuc:
+            for i in range(aa, aa + window_size):
+                sec_struct_list[i] = secondary_structure
     return sec_struct_list
 
-print(find_nucleations(helix_value_list, 'H'))
+helix_nuc_list = find_nucleations(helix_value_list, 'H')
+sheet_nuc_list = find_nucleations(sheet_value_list, 'E')
+print('Helix_nuc_list: ', helix_nuc_list)
+print('Sheet_nuc_list: ', sheet_nuc_list)
+
+def extend_nucleations():
+    pass
+
