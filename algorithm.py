@@ -82,15 +82,24 @@ def find_nucleations(value_list, secondary_structure):
     # elif secondary_structure == 'T':
     #    pass
     sec_struct_list = ['-'] * len(value_list)
-    for aa in range(0, len(value_list) - window_size):
+    for aa in range(len(value_list) - (window_size)):
         window = []
-        for win_index in range(aa, aa + window_size):
+        for win_index in range(aa, aa + (window_size)):  # index error somewhere in here??? line 75 & 79
             window.append(value_list[win_index])
         result = list(filter(lambda x: x >= nucleation_threshold, window))  # look at documentation if only > or >=
-        if len(result) >= amount_for_nuc:
-            for i in range(aa, aa + window_size):
-                sec_struct_list[i] = secondary_structure   # may not be quite correct
+        if sec_struct_list[aa] == secondary_structure:  # here to stop nucleation from overwriting extension
+            pass
+        elif len(result) >= amount_for_nuc:
+            for i in range(aa, aa + (window_size)):
+                sec_struct_list[i] = secondary_structure   # may not be quite correct according to original paper
+            # extend nucleation
+            temination_window = []
     return sec_struct_list
+
+def extend_nucleations():  # might not be needed/ included in find nucleations/ called by find nucleations??
+    pass
+
+
 
 
 helix_nuc_list = find_nucleations(helix_value_list, 'H')
@@ -98,9 +107,6 @@ sheet_nuc_list = find_nucleations(sheet_value_list, 'E')
 print('Helix_nuc_list: ', helix_nuc_list)
 print('Sheet_nuc_list: ', sheet_nuc_list)
 
-
-def extend_nucleations():  # might not be needed/ included in find nucleations/ called by find nucleations??
-    pass
 
 # http://www.biogem.org/tool/chou-fasman/index.php
 # comparison to webtool with implemented cf
