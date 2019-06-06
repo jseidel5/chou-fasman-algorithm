@@ -69,6 +69,16 @@ print('Helix_value_list: ', helix_value_list)
 print('Sheet_value_list: ', sheet_value_list)
 print('Turn_value_list: ', turn_value_list)
 
+def find_extendindex(motif, strseq):
+    index_list = []
+    stpoint = 0
+    position = 0
+    while position >=0:
+        position = strseq.find(motif, stpoint, len(strseq))
+        if position >= 0:
+            index_list.append(position)
+        stpoint = position + len(motif)
+    return index_list
 
 def find_nucleations(value_list, secondary_structure):
     if secondary_structure == 'H':
@@ -87,13 +97,16 @@ def find_nucleations(value_list, secondary_structure):
         for win_index in range(aa, aa + (window_size)):  # index error somewhere in here??? line 75 & 79
             window.append(value_list[win_index])
         result = list(filter(lambda x: x >= nucleation_threshold, window))  # look at documentation if only > or >=
-        if sec_struct_list[aa] == secondary_structure:  # here to stop nucleation from overwriting extension
-            pass
-        elif len(result) >= amount_for_nuc:
+        if len(result) >= amount_for_nuc:
             for i in range(aa, aa + (window_size)):
                 sec_struct_list[i] = secondary_structure   # may not be quite correct according to original paper
-            # extend nucleation
-            temination_window = []
+    stringseq = ''.join(sec_struct_list)
+    # print('HIER!:', stringseq)
+    fwd =secondary_structure * 3 + '-'
+    rev ='-' + secondary_structure * 3
+    # print(fwd, rev)
+    print('fwd',find_extendindex(fwd, stringseq))
+    print('rev',find_extendindex(rev, stringseq))  # ab hier extend sse mit diesen indices
     return sec_struct_list
 
 def extend_nucleations():  # might not be needed/ included in find nucleations/ called by find nucleations??
@@ -127,3 +140,8 @@ print('orig')
 print(test2sh)
 print('pred')
 print(sheet_nuc_list)
+
+'''
+for  i in range(10,0,-1):
+    print(i)
+'''
