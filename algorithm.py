@@ -69,16 +69,18 @@ print('Helix_value_list: ', helix_value_list)
 print('Sheet_value_list: ', sheet_value_list)
 print('Turn_value_list: ', turn_value_list)
 
+
 def find_extendindex(motif, strseq):
     index_list = []
     stpoint = 0
     position = 0
-    while position >=0:
+    while position >= 0:
         position = strseq.find(motif, stpoint, len(strseq))
         if position >= 0:
             index_list.append(position)
         stpoint = position + len(motif)
     return index_list
+
 
 def find_nucleations(value_list, secondary_structure):
     if secondary_structure == 'H':
@@ -92,21 +94,54 @@ def find_nucleations(value_list, secondary_structure):
     # elif secondary_structure == 'T':
     #    pass
     sec_struct_list = ['-'] * len(value_list)
-    for aa in range(len(value_list) - (window_size)):
+    for aa in range(len(value_list) - window_size):
         window = []
-        for win_index in range(aa, aa + (window_size)):  # index error somewhere in here??? line 75 & 79
+        for win_index in range(aa, aa + window_size):  # index error somewhere in here??? line 75 & 79
             window.append(value_list[win_index])
         result = list(filter(lambda x: x >= nucleation_threshold, window))  # look at documentation if only > or >=
         if len(result) >= amount_for_nuc:
-            for i in range(aa, aa + (window_size)):
+            for i in range(aa, aa + window_size):
                 sec_struct_list[i] = secondary_structure   # may not be quite correct according to original paper
     stringseq = ''.join(sec_struct_list)
     # print('HIER!:', stringseq)
     fwd =secondary_structure * 3 + '-'
     rev ='-' + secondary_structure * 3
     # print(fwd, rev)
-    print('fwd',find_extendindex(fwd, stringseq))
-    print('rev',find_extendindex(rev, stringseq))  # ab hier extend sse mit diesen indices
+    print('Liste von:', secondary_structure)
+    print('fwd', find_extendindex(fwd, stringseq))
+    print('rev', find_extendindex(rev, stringseq))
+    checkseq = stringseq
+    loopcheck = True
+    while stringseq != checkseq or loopcheck is True:
+        fwdindex = find_extendindex(fwd, stringseq)
+        revindex = find_extendindex(rev, stringseq)
+        # print('hier!', fwdindex)
+        #print('hier!', revindex)
+        checkseq = stringseq
+        loopcheck = False
+        # erweiterung
+        #print('value list', value_list)
+        for i in fwdindex:  # fwd
+            fwd_threshold = 0
+            for j in range(i, i + 4):
+                fwd_threshold = fwd_threshold + value_list[j]
+            fwd_threshold = fwd_threshold / 4
+            #print('fwd_thresh', fwd_threshold)
+            if fwd_threshold > 1.00:
+                stringseq = stringseq[:i + 1] + secondary_structure * 4 + stringseq[i + 5:]
+
+        for i in revindex:  # rev
+            rev_threshold = 0
+            for j in range(i, i + 4):
+                rev_threshold = rev_threshold + value_list[j]
+            rev_threshold = rev_threshold / 4
+            if rev_threshold > 1.00:
+                stringseq = stringseq[:i + 1] + secondary_structure * 4 + stringseq[i + 5:]
+        #print(checkseq)
+        #print(sec_struct_list)
+        sec_struct_list = list(stringseq)   # might not be needed
+
+
     return sec_struct_list
 
 def extend_nucleations():  # might not be needed/ included in find nucleations/ called by find nucleations??
@@ -141,7 +176,4 @@ print(test2sh)
 print('pred')
 print(sheet_nuc_list)
 
-'''
-for  i in range(10,0,-1):
-    print(i)
-'''
+
