@@ -52,8 +52,11 @@ turn_dic = read_propensities_into_dic(propensity_file, 3)
 print('Helix: ', helix_dic)
 print('Sheet: ', sheet_dic)
 print('Turn: ', turn_dic)
-
-
+f_i = read_propensities_into_dic(propensity_file, 4)
+f_i1 = read_propensities_into_dic(propensity_file, 5)
+f_i2 = read_propensities_into_dic(propensity_file, 6)
+f_i3 = read_propensities_into_dic(propensity_file, 7)
+# print('f_i3', f_i3)
 # creates list of secondary structure values for sequence
 def map_dic_to_seq(sequence, dictionary):
     value_list = []
@@ -68,7 +71,11 @@ turn_value_list = (map_dic_to_seq(sequence, turn_dic))
 print('Helix_value_list: ', helix_value_list)
 print('Sheet_value_list: ', sheet_value_list)
 print('Turn_value_list: ', turn_value_list)
-
+f_i_value_list = map_dic_to_seq(sequence, f_i)
+f_i1_value_list = map_dic_to_seq(sequence, f_i1)
+f_i2_value_list = map_dic_to_seq(sequence, f_i2)
+f_i3_value_list = map_dic_to_seq(sequence, f_i3)
+# print('f_i_value_list', f_i_value_list)
 
 def find_extendindex(motif, strseq):
     index_list = []
@@ -91,8 +98,6 @@ def find_nucleations(value_list, secondary_structure):
         window_size = 5
         amount_for_nuc = 3
         nucleation_threshold = 1.00
-    # elif secondary_structure == 'T':
-    #    pass
     sec_struct_list = ['-'] * len(value_list)
     for aa in range(len(value_list) - window_size):
         window = []
@@ -140,22 +145,83 @@ def find_nucleations(value_list, secondary_structure):
         #print(checkseq)
         #print(sec_struct_list)
         sec_struct_list = list(stringseq)   # might not be needed
-
-
     return sec_struct_list
 
-def extend_nucleations():  # might not be needed/ included in find nucleations/ called by find nucleations??
-    pass
+def predict_turns(turn_value_list):
+    turn_struct_list = ['-'] * len(turn_value_list)
+    threshold = 7.5e-5
+    for aa in range(len(turn_value_list) - 3):
+        probability = f_i_value_list[aa] * f_i1_value_list[aa + 1] * f_i2_value_list[aa + 2] * f_i3_value_list[aa + 3]
+        over1 = (turn_value_list[aa] + turn_value_list[aa + 1] + turn_value_list[aa + 2] + turn_value_list[aa + 3]) /4
+        if probability > threshold and over1 > 1:
+            turn_struct_list[aa] = 'T'
+        #print(probability)
+    return turn_struct_list
 
 
+def compile_sec_struct():
+    secondary_structure = ['-'] * len(helix_value_list)
+    for aa in range(len(secondary_structure)):
+        if helix_nuc_list[aa] == 'H' and turn_nuc_list[aa] == '-' and sheet_nuc_list[aa] == '-': # only H
+            secondary_structure[aa] = 'H'
+        elif helix_nuc_list[aa] == '-' and turn_nuc_list[aa] == 'T' and sheet_nuc_list[aa] == '-': # only T
+            secondary_structure[aa] = 'T'
+        elif helix_nuc_list[aa] == '-' and turn_nuc_list[aa] == '-' and sheet_nuc_list[aa] == 'E': # only E
+            secondary_structure[aa] = 'E'
+        elif helix_nuc_list[aa] == 'H' and turn_nuc_list[aa] == '-' and sheet_nuc_list[aa] == 'E': # H or E
+            if helix_value_list[aa] > sheet_value_list[aa]:
+                secondary_structure[aa] = 'H'
+            else:
+                secondary_structure[aa] = 'E'
+        elif helix_nuc_list[aa] == '-' and turn_nuc_list[aa] == '-' and sheet_nuc_list[aa] == '-': # none -> C
+            secondary_structure[aa] = 'C'
+        elif helix_nuc_list[aa] == 'H' and turn_nuc_list[aa] == 'T' and sheet_nuc_list[aa] == 'E': # H ore T or E
+            alpha = helix_value_list[aa]
+            beta = sheet_value_list[aa]
+            gamma = turn_value_list[aa]
+            max_val = max(alpha, beta, gamma)
+            if max_val == alpha:
+                secondary_structure[aa] = 'H'
+            elif max_val == beta:
+                secondary_structure[aa] = 'E'
+            elif max_val == gamma:
+                secondary_structure[aa] = 'T'
+        elif helix_nuc_list[aa] == 'H' and turn_nuc_list[aa] == 'T' and sheet_nuc_list[aa] == '-': # H or T
+            if helix_value_list[aa] > turn_value_list[aa]:
+                secondary_structure[aa] = 'H'
+            else:
+                secondary_structure[aa] = 'T'
+        elif helix_nuc_list[aa] == '-' and turn_nuc_list[aa] == 'T' and sheet_nuc_list[aa] == 'E': # E or T
+            if sheet_value_list[aa] > turn_value_list[aa]:
+                secondary_structure[aa] = 'E'
+            else:
+                secondary_structure[aa] = 'T'
+    return secondary_structure
 
-
+turn_nuc_list = predict_turns(turn_value_list)
 helix_nuc_list = find_nucleations(helix_value_list, 'H')
 sheet_nuc_list = find_nucleations(sheet_value_list, 'E')
 print('Helix_nuc_list: ', helix_nuc_list)
 print('Sheet_nuc_list: ', sheet_nuc_list)
+print('Turn_nuc_list:  ', turn_nuc_list)
+final_structure = compile_sec_struct()
 
 
+final_test = 'EHHHHEEHHHHHHEEEEEHTETEEEEEEEEEECCTTTCHHHHHHHHHHHHHHHHHHHHHHCCTEEEEEHHHHHHHHEHETHHHHHHHHHHHHHHHHHHHHHHHHHHHHEEEEEEEHHHCCCCEEEETEHHHHHHTHHHHHHHHHHHTHEEETCCTCHHHEEEEEEETCCCCCC'
+final_test2 = []
+for i in final_test:
+    final_test2.append(i)
+print(final_test2)
+print(final_structure)
+counter = 0
+
+for i in range(len(final_structure)):
+    if final_structure[i] == final_test2[i]:
+        counter += 1
+
+print('% equal to online implementation', counter / len(final_structure) * 100)
+
+'''
 # http://www.biogem.org/tool/chou-fasman/index.php
 # comparison to webtool with implemented cf
 test = 'HHHHHHHHHHHHHHHHHHH                   HHHHHHHHHHHHHHHHHHHHHH       HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH          HHHHHHHHHHHHHHHHHHHH        HHHHHHH          '
@@ -175,5 +241,5 @@ print('orig')
 print(test2sh)
 print('pred')
 print(sheet_nuc_list)
-
+'''
 
