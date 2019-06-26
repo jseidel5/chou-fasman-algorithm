@@ -1,8 +1,10 @@
-# import glob
-
+import argparse
 
 propensity_file = 'data/structure_propensities.txt'
-sequence_file = 'data/test_sequence.fasta'
+sequence_file = 'data/sequence.fasta'
+
+#parser = argparse.ArgumentParser(description= 'Predict the secondary structure of a protein sequence with the Chou-Fasman method.')
+#parser.add_argument()
 
 
 def read_sequence(file):
@@ -43,39 +45,12 @@ def read_propensities_into_dic(file, column):
     return dic_temp
 
 
-print('Sequence: ', read_sequence(sequence_file))
-sequence = read_sequence(sequence_file)
-
-helix_dic = read_propensities_into_dic(propensity_file, 1)  # opens file 3 times -> should be changed
-sheet_dic = read_propensities_into_dic(propensity_file, 2)
-turn_dic = read_propensities_into_dic(propensity_file, 3)
-print('Helix: ', helix_dic)
-print('Sheet: ', sheet_dic)
-print('Turn: ', turn_dic)
-f_i = read_propensities_into_dic(propensity_file, 4)
-f_i1 = read_propensities_into_dic(propensity_file, 5)
-f_i2 = read_propensities_into_dic(propensity_file, 6)
-f_i3 = read_propensities_into_dic(propensity_file, 7)
-# print('f_i3', f_i3)
-# creates list of secondary structure values for sequence
 def map_dic_to_seq(sequence, dictionary):
     value_list = []
     for aa in sequence:
         value_list.append(dictionary[aa])
     return value_list
 
-
-helix_value_list = (map_dic_to_seq(sequence, helix_dic))
-sheet_value_list = (map_dic_to_seq(sequence, sheet_dic))
-turn_value_list = (map_dic_to_seq(sequence, turn_dic))
-print('Helix_value_list: ', helix_value_list)
-print('Sheet_value_list: ', sheet_value_list)
-print('Turn_value_list: ', turn_value_list)
-f_i_value_list = map_dic_to_seq(sequence, f_i)
-f_i1_value_list = map_dic_to_seq(sequence, f_i1)
-f_i2_value_list = map_dic_to_seq(sequence, f_i2)
-f_i3_value_list = map_dic_to_seq(sequence, f_i3)
-# print('f_i_value_list', f_i_value_list)
 
 def find_extendindex(motif, strseq):
     index_list = []
@@ -101,37 +76,31 @@ def find_nucleations(value_list, secondary_structure):
     sec_struct_list = ['-'] * len(value_list)
     for aa in range(len(value_list) - window_size):
         window = []
-        for win_index in range(aa, aa + window_size):  # index error somewhere in here??? line 75 & 79
+        for win_index in range(aa, aa + window_size):
             window.append(value_list[win_index])
-        result = list(filter(lambda x: x >= nucleation_threshold, window))  # look at documentation if only > or >=
+        result = list(filter(lambda x: x >= nucleation_threshold, window))
         if len(result) >= amount_for_nuc:
             for i in range(aa, aa + window_size):
-                sec_struct_list[i] = secondary_structure   # may not be quite correct according to original paper
+                sec_struct_list[i] = secondary_structure
     stringseq = ''.join(sec_struct_list)
-    # print('HIER!:', stringseq)
-    fwd =secondary_structure * 3 + '-'
-    rev ='-' + secondary_structure * 3
-    # print(fwd, rev)
-    print('Liste von:', secondary_structure)
-    print('fwd', find_extendindex(fwd, stringseq))
-    print('rev', find_extendindex(rev, stringseq))
+    fwd = secondary_structure * 3 + '-'
+    rev = '-' + secondary_structure * 3
+    # print('Liste von:', secondary_structure)
+    # print('fwd', find_extendindex(fwd, stringseq))
+    # print('rev', find_extendindex(rev, stringseq))
     checkseq = stringseq
     loopcheck = True
     while stringseq != checkseq or loopcheck is True:
         fwdindex = find_extendindex(fwd, stringseq)
         revindex = find_extendindex(rev, stringseq)
-        # print('hier!', fwdindex)
-        #print('hier!', revindex)
         checkseq = stringseq
         loopcheck = False
-        # erweiterung
-        #print('value list', value_list)
+        # Extension
         for i in fwdindex:  # fwd
             fwd_threshold = 0
             for j in range(i, i + 4):
                 fwd_threshold = fwd_threshold + value_list[j]
             fwd_threshold = fwd_threshold / 4
-            #print('fwd_thresh', fwd_threshold)
             if fwd_threshold > 1.00:
                 stringseq = stringseq[:i + 1] + secondary_structure * 4 + stringseq[i + 5:]
 
@@ -142,40 +111,38 @@ def find_nucleations(value_list, secondary_structure):
             rev_threshold = rev_threshold / 4
             if rev_threshold > 1.00:
                 stringseq = stringseq[:i + 1] + secondary_structure * 4 + stringseq[i + 5:]
-        #print(checkseq)
-        #print(sec_struct_list)
-        sec_struct_list = list(stringseq)   # might not be needed
+        sec_struct_list = list(stringseq)
     return sec_struct_list
+
 
 def predict_turns(turn_value_list):
     turn_struct_list = ['-'] * len(turn_value_list)
     threshold = 7.5e-5
     for aa in range(len(turn_value_list) - 3):
         probability = f_i_value_list[aa] * f_i1_value_list[aa + 1] * f_i2_value_list[aa + 2] * f_i3_value_list[aa + 3]
-        over1 = (turn_value_list[aa] + turn_value_list[aa + 1] + turn_value_list[aa + 2] + turn_value_list[aa + 3]) /4
+        over1 = (turn_value_list[aa] + turn_value_list[aa + 1] + turn_value_list[aa + 2] + turn_value_list[aa + 3]) / 4
         if probability > threshold and over1 > 1:
             turn_struct_list[aa] = 'T'
-        #print(probability)
     return turn_struct_list
 
 
 def compile_sec_struct():
     secondary_structure = ['-'] * len(helix_value_list)
     for aa in range(len(secondary_structure)):
-        if helix_nuc_list[aa] == 'H' and turn_nuc_list[aa] == '-' and sheet_nuc_list[aa] == '-': # only H
+        if helix_nuc_list[aa] == 'H' and turn_nuc_list[aa] == '-' and sheet_nuc_list[aa] == '-':  # only H
             secondary_structure[aa] = 'H'
-        elif helix_nuc_list[aa] == '-' and turn_nuc_list[aa] == 'T' and sheet_nuc_list[aa] == '-': # only T
+        elif helix_nuc_list[aa] == '-' and turn_nuc_list[aa] == 'T' and sheet_nuc_list[aa] == '-':  # only T
             secondary_structure[aa] = 'T'
-        elif helix_nuc_list[aa] == '-' and turn_nuc_list[aa] == '-' and sheet_nuc_list[aa] == 'E': # only E
+        elif helix_nuc_list[aa] == '-' and turn_nuc_list[aa] == '-' and sheet_nuc_list[aa] == 'E':  # only E
             secondary_structure[aa] = 'E'
-        elif helix_nuc_list[aa] == 'H' and turn_nuc_list[aa] == '-' and sheet_nuc_list[aa] == 'E': # H or E
+        elif helix_nuc_list[aa] == 'H' and turn_nuc_list[aa] == '-' and sheet_nuc_list[aa] == 'E':  # H or E
             if helix_value_list[aa] > sheet_value_list[aa]:
                 secondary_structure[aa] = 'H'
             else:
                 secondary_structure[aa] = 'E'
-        elif helix_nuc_list[aa] == '-' and turn_nuc_list[aa] == '-' and sheet_nuc_list[aa] == '-': # none -> C
+        elif helix_nuc_list[aa] == '-' and turn_nuc_list[aa] == '-' and sheet_nuc_list[aa] == '-':  # none -> C
             secondary_structure[aa] = 'C'
-        elif helix_nuc_list[aa] == 'H' and turn_nuc_list[aa] == 'T' and sheet_nuc_list[aa] == 'E': # H ore T or E
+        elif helix_nuc_list[aa] == 'H' and turn_nuc_list[aa] == 'T' and sheet_nuc_list[aa] == 'E':  # H ore T or E
             alpha = helix_value_list[aa]
             beta = sheet_value_list[aa]
             gamma = turn_value_list[aa]
@@ -186,28 +153,59 @@ def compile_sec_struct():
                 secondary_structure[aa] = 'E'
             elif max_val == gamma:
                 secondary_structure[aa] = 'T'
-        elif helix_nuc_list[aa] == 'H' and turn_nuc_list[aa] == 'T' and sheet_nuc_list[aa] == '-': # H or T
+        elif helix_nuc_list[aa] == 'H' and turn_nuc_list[aa] == 'T' and sheet_nuc_list[aa] == '-':  # H or T
             if helix_value_list[aa] > turn_value_list[aa]:
                 secondary_structure[aa] = 'H'
             else:
                 secondary_structure[aa] = 'T'
-        elif helix_nuc_list[aa] == '-' and turn_nuc_list[aa] == 'T' and sheet_nuc_list[aa] == 'E': # E or T
+        elif helix_nuc_list[aa] == '-' and turn_nuc_list[aa] == 'T' and sheet_nuc_list[aa] == 'E':  # E or T
             if sheet_value_list[aa] > turn_value_list[aa]:
                 secondary_structure[aa] = 'E'
             else:
                 secondary_structure[aa] = 'T'
-    return secondary_structure
+    sec_struct_as_string = ''.join(secondary_structure)
+    return sec_struct_as_string
+
+
+print('Sequence:'.ljust(10), read_sequence(sequence_file))
+sequence = read_sequence(sequence_file)
+
+helix_dic = read_propensities_into_dic(propensity_file, 1)
+sheet_dic = read_propensities_into_dic(propensity_file, 2)
+turn_dic = read_propensities_into_dic(propensity_file, 3)
+# print('Helix: ', helix_dic)
+# print('Sheet: ', sheet_dic)
+# print('Turn: ', turn_dic)
+f_i = read_propensities_into_dic(propensity_file, 4)
+f_i1 = read_propensities_into_dic(propensity_file, 5)
+f_i2 = read_propensities_into_dic(propensity_file, 6)
+f_i3 = read_propensities_into_dic(propensity_file, 7)
+
+helix_value_list = (map_dic_to_seq(sequence, helix_dic))
+sheet_value_list = (map_dic_to_seq(sequence, sheet_dic))
+turn_value_list = (map_dic_to_seq(sequence, turn_dic))
+# print('Helix_value_list: ', helix_value_list)
+# print('Sheet_value_list: ', sheet_value_list)
+# print('Turn_value_list: ', turn_value_list)
+f_i_value_list = map_dic_to_seq(sequence, f_i)
+f_i1_value_list = map_dic_to_seq(sequence, f_i1)
+f_i2_value_list = map_dic_to_seq(sequence, f_i2)
+f_i3_value_list = map_dic_to_seq(sequence, f_i3)
 
 turn_nuc_list = predict_turns(turn_value_list)
 helix_nuc_list = find_nucleations(helix_value_list, 'H')
 sheet_nuc_list = find_nucleations(sheet_value_list, 'E')
-print('Helix_nuc_list: ', helix_nuc_list)
-print('Sheet_nuc_list: ', sheet_nuc_list)
-print('Turn_nuc_list:  ', turn_nuc_list)
+print('Helix:'.ljust(10), ''.join(helix_nuc_list))
+print('Sheet:'.ljust(10), ''.join(sheet_nuc_list))
+print('Turn:'.ljust(10), ''.join(turn_nuc_list))
 final_structure = compile_sec_struct()
+print('Structure:'.ljust(10), final_structure)
 
+# ----- TESTS BELOW ----- #
 
-final_test = 'EHHHHEEHHHHHHEEEEEHTETEEEEEEEEEECCTTTCHHHHHHHHHHHHHHHHHHHHHHCCTEEEEEHHHHHHHHEHETHHHHHHHHHHHHHHHHHHHHHHHHHHHHEEEEEEEHHHCCCCEEEETEHHHHHHTHHHHHHHHHHHTHEEETCCTCHHHEEEEEEETCCCCCC'
+# final_test = 'TEHHHHHHHHHHEEETHTEHHHHHEEEEHHTTCEEEETEHEHEHHHHHHTHEHHHHEHC' #>cath|4_2_0|1oaiA00/561-619
+
+'''
 final_test2 = []
 for i in final_test:
     final_test2.append(i)
@@ -218,28 +216,11 @@ counter = 0
 for i in range(len(final_structure)):
     if final_structure[i] == final_test2[i]:
         counter += 1
+'''
 
-print('% equal to online implementation', counter / len(final_structure) * 100)
+# print('% equal to online implementation', counter / len(final_structure) * 100)
 
 '''
 # http://www.biogem.org/tool/chou-fasman/index.php
 # comparison to webtool with implemented cf
-test = 'HHHHHHHHHHHHHHHHHHH                   HHHHHHHHHHHHHHHHHHHHHH       HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH          HHHHHHHHHHHHHHHHHHHH        HHHHHHH          '
-test2 = []
-for i in test:
-    test2.append(i)
-print('orig')
-print(test2)
-print('pred')
-print(helix_nuc_list)
-
-testsh = 'EEEEEEE     EEEEEEEEEEEEEEEEEEEE                               EEEEEE       EEE                          EEEEEEEEEEE      EEEEEEEEEEEE              EEEE       EEEEEEEE      '
-test2sh = []
-for i in testsh:
-    test2sh.append(i)
-print('orig')
-print(test2sh)
-print('pred')
-print(sheet_nuc_list)
 '''
-
