@@ -11,3 +11,7 @@ only evaluated 19 proteins.
 - Python 3
 
 ## Getting started
+Clone this repository
+```shell
+https://github.com/jseidel5/chou-fasman-algorithm.git
+cd chou-fasman-algorithm

@@ -1,10 +1,17 @@
 import argparse
 
-propensity_file = 'data/structure_propensities.txt'
-sequence_file = 'data/sequence.fasta'
+# propensity_file = 'data/propensities.txt'
+# sequence_file = 'data/sequence.fasta'
 
-#parser = argparse.ArgumentParser(description= 'Predict the secondary structure of a protein sequence with the Chou-Fasman method.')
-#parser.add_argument()
+parser = argparse.ArgumentParser(description='Predict the secondary structure of a protein sequence.')
+parser.add_argument('sequence_file', type=str, help='Input filename for sequence in data dir')
+parser.add_argument('propensities_file', nargs='?', type=str, help='Input filename for propensities in data dir',
+                    default='propensities.txt')
+
+args = parser.parse_args()
+
+propensity_file = 'data/' + args.propensities_file
+sequence_file = 'data/' + args.sequence_file
 
 
 def read_sequence(file):
@@ -167,8 +174,8 @@ def compile_sec_struct():
     return sec_struct_as_string
 
 
-print('Sequence:'.ljust(10), read_sequence(sequence_file))
 sequence = read_sequence(sequence_file)
+print('Sequence:'.ljust(10), sequence)
 
 helix_dic = read_propensities_into_dic(propensity_file, 1)
 sheet_dic = read_propensities_into_dic(propensity_file, 2)
@@ -195,9 +202,11 @@ f_i3_value_list = map_dic_to_seq(sequence, f_i3)
 turn_nuc_list = predict_turns(turn_value_list)
 helix_nuc_list = find_nucleations(helix_value_list, 'H')
 sheet_nuc_list = find_nucleations(sheet_value_list, 'E')
+
 print('Helix:'.ljust(10), ''.join(helix_nuc_list))
 print('Sheet:'.ljust(10), ''.join(sheet_nuc_list))
 print('Turn:'.ljust(10), ''.join(turn_nuc_list))
+
 final_structure = compile_sec_struct()
 print('Structure:'.ljust(10), final_structure)
 
