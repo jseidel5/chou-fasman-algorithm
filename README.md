@@ -15,3 +15,16 @@ Clone this repository
 ```shell
 https://github.com/jseidel5/chou-fasman-algorithm.git
 cd chou-fasman-algorithm
+```
+Input
+```shell
+python algorithm.py sequence_file [propensities_file]
+```
+
+sequence_file : Input the name of your *.fasta file in the data directory
+containing the sequence.
+
+propensities_file : Input the name of your *.txt file in the data directory 
+containing custom propensities.
+
+Note: If no propensities_file is called the default one will be used.
