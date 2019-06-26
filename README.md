@@ -28,3 +28,5 @@ propensities_file : Input the name of your *.txt file in the data directory
 containing custom propensities.
 
 Note: If no propensities_file is called the default one will be used.
+
+sequence.fasta, helix.fasta and sheet.fasta contain example proteins.
